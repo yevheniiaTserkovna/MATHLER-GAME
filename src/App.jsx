@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PopapProvider } from './components/PopapContext';
 import Game from './Game';
 
 const calculation = [
@@ -30,7 +31,7 @@ const App = () => {
   };
 
   return (
-    <div>
+    <PopapProvider>
       <Game
         calculation={calculation[game]}
         key={new Date().getTime()}
@@ -38,7 +39,7 @@ const App = () => {
         changeComplexityHandler={changeComplexity}
         complexity={complexity}
       />
-    </div>
+    </PopapProvider>
   );
 };
 

@@ -1,14 +1,18 @@
 //import { evaluate } from 'mathjs';
+import { useCallback } from 'react';
 import { useEffect, useReducer } from 'react';
 import styled from 'styled-components';
 import GameStatus from './components/GameStatus';
 import Header from './components/Header';
+import Comp from './components/Comp';
 import Info from './components/Info';
 import NumbersPanel from './components/NumbersPanel';
 import Popap from './components/Popap';
 import UserAnswersBlock from './components/UserAnswersBlock';
 import { NUMBER_COUNT, ROW_COUNT } from './constants';
 import { mathEvaluate } from './mathFunctions';
+import { useMemo } from 'react';
+import { usePopap } from './components/PopapContext';
 
 const Wrapper = styled.section`
   height: 100vh;
@@ -99,7 +103,6 @@ const updateNumberButtons = (numberButtons, newHistoryRow) => {
 const initialData = {
   history: [],
   currentRow: [],
-  popapContent: { isVisible: false },
   gameStatus: false,
   numberButtons: {
     0: '',
@@ -127,8 +130,6 @@ const reducer = (state, action) => {
       return { ...state, numberButtons: action.payload };
     case 'SET_CURRENT_ROW':
       return { ...state, currentRow: action.payload };
-    case 'SET_POPAP_CONTENT':
-      return { ...state, popapContent: action.payload };
     case 'SET_GAME_STATUS':
       return { ...state, gameStatus: action.payload };
     default:
@@ -142,25 +143,35 @@ const Game = ({
   complexity,
   changeComplexityHandler,
 }) => {
-  const rightAnswer = mathEvaluate(calculation.join(''));
+  const rightAnswer = useMemo(
+    () => mathEvaluate(calculation.join('')),
+    [calculation]
+  );
 
   const [state, dispatch] = useReducer(reducer, initialData);
+  const popap = usePopap();
 
-  const userClick = (val) => {
-    if (state.currentRow.length === NUMBER_COUNT) return;
-    dispatch({ type: 'SET_CURRENT_ROW', payload: [...state.currentRow, val] });
-  };
+  const userClick = useCallback(
+    (val) => {
+      if (state.currentRow.length === NUMBER_COUNT) return;
+      dispatch({
+        type: 'SET_CURRENT_ROW',
+        payload: [...state.currentRow, val],
+      });
+    },
+    [state.currentRow]
+  );
 
-  const delClick = () => {
+  const delClick = useCallback(() => {
     dispatch({
       type: 'SET_CURRENT_ROW',
       payload: [...state.currentRow.slice(0, state.currentRow.length - 1)],
     });
-  };
+  }, [state.currentRow]);
 
-  const delAllClick = () => {
+  const delAllClick = useCallback(() => {
     dispatch({ type: 'SET_CURRENT_ROW', payload: [] });
-  };
+  }, []);
 
   const enterHandler = () => {
     if (state.gameStatus) {
@@ -169,40 +180,22 @@ const Game = ({
     }
 
     if (state.currentRow.length !== 6) {
-      dispatch({
-        type: 'SET_POPAP_CONTENT',
-        payload: {
-          isVisible: true,
-          title: 'Not enough items',
-          text: 'Fill in all items',
-        },
-      });
+      popap.show('Not enough items', 'Fill in all items');
       return;
     }
 
     //const userAnswer = evaluate(currentRow.join(''));
     const userAnswer = mathEvaluate(state.currentRow.join(''));
     if (userAnswer === false) {
-      dispatch({
-        type: 'SET_POPAP_CONTENT',
-        payload: {
-          isVisible: true,
-          title: 'Incorrect calculation',
-          text: 'calculation is incorrect',
-        },
-      });
+      popap.show('Incorrect calculation', 'calculation is incorrect');
       return;
     }
 
     if (userAnswer !== rightAnswer) {
-      dispatch({
-        type: 'SET_POPAP_CONTENT',
-        payload: {
-          isVisible: true,
-          title: 'Wrong calculation',
-          text: 'calculation does not equal ' + rightAnswer,
-        },
-      });
+      popap.show(
+        'Wrong calculation',
+        'calculation does not equal ' + rightAnswer
+      );
       return;
     }
 
@@ -217,20 +210,9 @@ const Game = ({
     delAllClick();
   };
 
-  const closePopapHandler = () => {
-    dispatch({ type: 'SET_POPAP_CONTENT', payload: { isVisible: false } });
-  };
-
-  const showInfo = () => {
-    dispatch({
-      type: 'SET_POPAP_CONTENT',
-      payload: {
-        isVisible: true,
-        title: 'How to play Mathler',
-        text: <Info />,
-      },
-    });
-  };
+  const showInfo = useCallback(() => {
+    popap.show('How to play Mathler', <Info />);
+  }, [popap]);
 
   useEffect(() => {
     if (!state.history.length) return;
@@ -248,7 +230,7 @@ const Game = ({
 
   return (
     <Wrapper>
-      <Popap content={state.popapContent} closeHandler={closePopapHandler} />
+      <Popap />
       <Content>
         <Header
           content={rightAnswer}

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { HelpOutlineOutlined, SchoolOutlined } from '@material-ui/icons';
 import styled from 'styled-components';
 import bgImg from '../img/headerBg_2.webp';

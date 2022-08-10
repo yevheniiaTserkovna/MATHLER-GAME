@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { usePopap } from './PopapContext';
 
 const Wrapper = styled.div`
   position: fixed;
@@ -53,21 +54,22 @@ const Button = styled.div`
   }
 `;
 
-const Popap = ({ content, closeHandler }) => {
+const Popap = () => {
+  const { isVisible, title, text, hide } = usePopap();
+  const popap = usePopap();
+
+  console.log('popap = ', popap);
+
   const closeClick = (e) => {
-    if (e.target.dataset.closepopap) closeHandler();
+    if (e.target.dataset.closepopap) hide();
   };
 
   return (
-    <Wrapper
-      isVisible={content.isVisible}
-      onClick={closeClick}
-      data-closepopap={true}
-    >
-      <Container isVisible={content.isVisible}>
-        <Title>{content.title}</Title>
-        <Content>{content.text}</Content>
-        <Button onClick={closeHandler}>OK</Button>
+    <Wrapper isVisible={isVisible} onClick={closeClick} data-closepopap={true}>
+      <Container isVisible={isVisible}>
+        <Title>{title}</Title>
+        <Content>{text}</Content>
+        <Button onClick={hide}>OK</Button>
       </Container>
     </Wrapper>
   );
